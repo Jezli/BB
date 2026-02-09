@@ -20,7 +20,7 @@
         <p class="text-indigo-300 text-xs tracking-widest uppercase">总资产折合 (HKD)</p>
         <h1 id="total-balance-hkd" class="text-4xl font-black mt-2 tracking-tight">---</h1>
         <div class="mt-4 flex justify-center items-center gap-2">
-            <span id="total-pl-tag" class="px-3 py-1 rounded-full text-[10px] font-bold">同步行情中...</span>
+            <span id="total-pl-tag" class="px-3 py-1 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400">正在同步...</span>
         </div>
     </div>
 
@@ -37,105 +37,4 @@
 
         <div id="profile" class="tab-content">
             <div class="card flex items-center gap-4 py-8">
-                <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg text-white">D</div>
-                <div>
-                    <p class="text-xl font-bold uppercase">Dan</p>
-                    <p class="text-gray-400 text-xs">手机号: 181-3843-1223</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-lg border-t border-white/10 flex justify-around py-4 z-50">
-        <button onclick="showTab('watchlist')" class="nav-item active text-center flex-1">
-            <i class="fas fa-wallet block text-xl mb-1"></i><span class="text-[10px]">自选</span>
-        </button>
-        <button onclick="showTab('market')" class="nav-item text-center flex-1">
-            <i class="fas fa-globe block text-xl mb-1"></i><span class="text-[10px]">市场</span>
-        </button>
-        <button onclick="showTab('profile')" class="nav-item text-center flex-1">
-            <i class="fas fa-user-ninja block text-xl mb-1"></i><span class="text-[10px]">我</span>
-        </button>
-    </div>
-
-    <script>
-        // ============= 精准调优数据 (HKD 7000 目标) =============
-        const HKD_RATE = 7.82; 
-        const MY_ASSETS = [
-            // 将 buyPrice 设为 75，低于现价 83，就会显示盈利
-            { symbol: "SOLUSDT", buyPrice: 75.0, holdAmount: 9.2, label: "SOL" },
-            // 将 buyPrice 设为 1.2，低于现价 1.4，就会显示盈利
-            { symbol: "XRPUSDT", buyPrice: 1.2, holdAmount: 100, label: "XRP" }
-        ];
-        const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "BNBUSDT", "DOGEUSDT"];
-
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        async function updateData() {
-            try {
-                const allSymbols = [...new Set([...MY_ASSETS.map(a => a.symbol), ...MARKET_SYMBOLS])];
-                const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=["${allSymbols.join('","')}"]`);
-                const prices = await response.json();
-                
-                let totalValueUsdt = 0;
-                let totalCostUsdt = 0;
-                let portfolioHtml = '';
-                let marketHtml = '';
-
-                MY_ASSETS.forEach(asset => {
-                    const priceData = prices.find(p => p.symbol === asset.symbol);
-                    const currentPrice = parseFloat(priceData.price);
-                    const currentValue = currentPrice * asset.holdAmount;
-                    const costValue = asset.buyPrice * asset.holdAmount;
-                    const profitUsdt = currentValue - costValue;
-                    
-                    totalValueUsdt += currentValue;
-                    totalCostUsdt += costValue;
-
-                    portfolioHtml += `
-                        <div class="card shadow-inner">
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold text-lg text-white">${asset.label}</span>
-                                <span class="text-gray-400 text-sm">$${currentPrice.toLocaleString()}</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 mt-2">
-                                <div><p class="text-gray-500 text-[10px]">持仓折合 (HKD)</p><p class="text-sm font-bold">≈ ${(currentValue * HKD_RATE).toLocaleString(undefined,{maximumFractionDigits:0})}</p></div>
-                                <div class="text-right"><p class="text-gray-500 text-[10px]">累计盈亏</p><p class="text-sm font-bold text-green-400">+${(profitUsdt * HKD_RATE).toFixed(2)} HKD</p></div>
-                            </div>
-                        </div>`;
-                });
-
-                MARKET_SYMBOLS.forEach(sym => {
-                    const pData = prices.find(p => p.symbol === sym);
-                    marketHtml += `
-                        <div class="card flex justify-between items-center py-4 border-l-4 border-blue-500">
-                            <span class="font-bold ml-2 text-white">${sym.replace('USDT','')}</span>
-                            <span class="font-mono font-semibold">$${parseFloat(pData.price).toLocaleString()}</span>
-                        </div>`;
-                });
-
-                document.getElementById('portfolio-list').innerHTML = portfolioHtml;
-                document.getElementById('all-market-list').innerHTML = marketHtml;
-                
-                const totalValueHkd = totalValueUsdt * HKD_RATE;
-                const totalProfitHkd = (totalValueUsdt - totalCostUsdt) * HKD_RATE;
-                
-                document.getElementById('total-balance-hkd').innerText = `≈ ${totalValueHkd.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
-                
-                const tag = document.getElementById('total-pl-tag');
-                tag.innerText = `盈利 +${totalProfitHkd.toFixed(2)} HKD`;
-                tag.className = `px-3 py-1 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400`;
-
-            } catch (e) { console.log("加载中..."); }
-        }
-
-        updateData();
-        setInterval(updateData, 5000);
-    </script>
-</body>
-</html>
+                <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex
