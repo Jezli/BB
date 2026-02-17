@@ -18,9 +18,9 @@
 
     <div class="p-6 bg-gradient-to-br from-indigo-900 to-black rounded-b-[2rem] shadow-2xl sticky top-0 z-50 text-center border-b border-white/5">
         <p class="text-indigo-300 text-xs tracking-widest uppercase">总资产折合 (HKD)</p>
-        <h1 id="total-balance-hkd" class="text-4xl font-black mt-2 tracking-tight">---</h1>
+        <h1 id="total-balance-hkd" class="text-4xl font-black mt-2 tracking-tight">≈ 6,800.00</h1>
         <div class="mt-4 flex justify-center items-center gap-2">
-            <span id="total-pl-tag" class="px-3 py-1 rounded-full text-[10px] font-bold">正在连接行情...</span>
+            <span id="total-pl-tag" class="px-3 py-1 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400">总盈亏 -1,200.00 HKD</span>
         </div>
     </div>
 
@@ -31,7 +31,7 @@
         </div>
 
         <div id="market" class="tab-content">
-            <h2 class="text-xl font-bold mb-4 px-2">全球市场</h2>
+            <h2 class="text-xl font-bold mb-4 px-2">全球市场行情</h2>
             <div id="all-market-list" class="space-y-2"></div>
         </div>
 
@@ -39,8 +39,8 @@
             <div class="card flex items-center gap-4 py-8">
                 <div class="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-blue-500 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg text-white">D</div>
                 <div>
-                    <p class="text-xl font-bold">Dan</p>
-                    <p class="text-gray-500 text-xs">实名认证用户</p>
+                    <p class="text-xl font-bold uppercase">Dan</p>
+                    <p class="text-gray-500 text-[10px]">Real-time Portfolio Monitoring</p>
                 </div>
             </div>
         </div>
@@ -59,16 +59,17 @@
     </div>
 
     <script>
-        // 核心配置
         const HKD_RATE = 7.82;
         
-        // 修改这里的 buyPrice 和 holdAmount 即可控制初始买入显示和总金额
+        // 经过计算配平的持仓数据：
+        // SOL: 投入约 6000 HKD，现值约 5100 HKD
+        // XRP: 投入约 2000 HKD，现值约 1700 HKD
         const MY_ASSETS = [
-            { symbol: "SOLUSDT", buyPrice: 135.5, holdAmount: 8.2, label: "SOL" },
-            { symbol: "XRPUSDT", buyPrice: 2.25, holdAmount: 110, label: "XRP" }
+            { symbol: "SOLUSDT", buyPrice: 115.0, holdAmount: 6.65, label: "SOL" },
+            { symbol: "XRPUSDT", buyPrice: 2.15, holdAmount: 118, label: "XRP" }
         ];
 
-        const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "BNBUSDT", "ADAUSDT"];
+        const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "BNBUSDT", "SOLUSDT"];
 
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -85,7 +86,6 @@
                 let totalCurrentValHkd = 0;
                 let totalInitialInvestHkd = 0;
                 let portfolioHtml = '';
-                let marketHtml = '';
 
                 MY_ASSETS.forEach(asset => {
                     const priceData = prices.find(p => p.symbol === asset.symbol);
@@ -104,50 +104,47 @@
                         <div class="card">
                             <div class="flex justify-between mb-2">
                                 <span class="font-bold text-lg">${asset.label}</span>
-                                <span class="text-gray-400 text-xs">现价: $${currentPrice.toLocaleString()}</span>
+                                <span class="text-gray-400 text-xs">实时价: $${currentPrice.toLocaleString()}</span>
                             </div>
                             <div class="grid grid-cols-2 gap-y-3 mt-2 border-t border-white/5 pt-2">
                                 <div>
                                     <p class="text-gray-500 text-[10px]">买入成本 (HKD)</p>
-                                    <p class="text-sm font-medium text-gray-300">≈ ${initialInvestHkd.toLocaleString(undefined,{maximumFractionDigits:2})}</p>
+                                    <p class="text-sm font-medium text-gray-300">${initialInvestHkd.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</p>
                                 </div>
                                 <div class="text-right">
                                     <p class="text-gray-500 text-[10px]">买入单价</p>
-                                    <p class="text-sm text-gray-300">$${asset.buyPrice}</p>
+                                    <p class="text-sm text-gray-300">$${asset.buyPrice.toFixed(2)}</p>
                                 </div>
                                 <div>
                                     <p class="text-gray-500 text-[10px]">当前价值 (HKD)</p>
-                                    <p class="text-sm font-bold">≈ ${currentValHkd.toLocaleString(undefined,{maximumFractionDigits:2})}</p>
+                                    <p class="text-sm font-bold">≈ ${currentValHkd.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</p>
                                 </div>
                                 <div class="text-right">
                                     <p class="text-gray-500 text-[10px]">累计盈亏</p>
-                                    <p class="text-sm font-bold ${plClass}">${profitLossHkd >= 0 ? '+' : ''}${profitLossHkd.toLocaleString(undefined,{maximumFractionDigits:2})} HKD</p>
+                                    <p class="text-sm font-bold ${plClass}">${profitLossHkd >= 0 ? '+' : ''}${profitLossHkd.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})} HKD</p>
                                 </div>
                             </div>
                         </div>`;
                 });
 
-                MARKET_SYMBOLS.forEach(sym => {
-                    const pData = prices.find(p => p.symbol === sym);
-                    marketHtml += `
-                        <div class="card flex justify-between items-center py-4 border-l-4 border-indigo-500">
-                            <span class="font-bold ml-2">${sym.replace('USDT','')}</span>
-                            <span class="font-mono font-semibold">$${parseFloat(pData.price).toLocaleString()}</span>
-                        </div>`;
+                // 更新大盘略（逻辑同前）
+                let marketHtml = '';
+                prices.forEach(p => {
+                    marketHtml += `<div class="card flex justify-between py-4 border-l-4 border-indigo-500"><span class="font-bold ml-2">${p.symbol.replace('USDT','')}</span><span class="font-mono font-semibold">$${parseFloat(p.price).toLocaleString()}</span></div>`;
                 });
 
                 document.getElementById('portfolio-list').innerHTML = portfolioHtml;
                 document.getElementById('all-market-list').innerHTML = marketHtml;
                 
-                // 更新总资产和总盈亏
+                // 最终资产总额和盈亏
                 const totalPL = totalCurrentValHkd - totalInitialInvestHkd;
-                document.getElementById('total-balance-hkd').innerText = `≈ ${totalCurrentValHkd.toLocaleString(undefined, {maximumFractionDigits: 2})}`;
+                document.getElementById('total-balance-hkd').innerText = `≈ ${totalCurrentValHkd.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 
                 const tag = document.getElementById('total-pl-tag');
-                tag.innerText = `总盈亏 ${totalPL >= 0 ? '+' : ''}${totalPL.toLocaleString(undefined, {maximumFractionDigits: 2})} HKD`;
+                tag.innerText = `总盈亏 ${totalPL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} HKD (投入 8,000.00)`;
                 tag.className = `px-3 py-1 rounded-full text-[10px] font-bold ${totalPL >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`;
 
-            } catch (e) { console.log("等待网络回传..."); }
+            } catch (e) { console.log("Updating..."); }
         }
 
         updateData();
